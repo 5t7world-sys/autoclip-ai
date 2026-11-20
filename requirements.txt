@@ -2,7 +2,7 @@
 # Python 3.10+ recommended. FFmpeg must be installed separately (see README).
 
 streamlit>=1.36,<2.0
-yt-dlp>=2024.8.6
+yt-dlp
 openai>=1.40,<3.0
 mediapipe>=0.10.9
 numpy>=1.24
