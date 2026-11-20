@@ -369,3 +369,53 @@ def download_video(
     if progress_cb:
         progress_cb(100.0, "Download complete")
     return output_path
+  
+# ---------------------------------------------------------------------------
+# 2. Transcription (Whisper API)
+# ---------------------------------------------------------------------------
+def transcribe_video(video_path: str, model_size: str = "base", api_key: str = "") -> list:
+    """Extract audio and transcribe it using OpenAI Whisper API."""
+    import tempfile
+    if not which("ffmpeg"):
+        raise ClipperError("FFmpeg is required to extract audio.")
+    if not OpenAI:
+        raise ClipperError("openai package is missing. Run: pip install openai")
+
+    api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        raise ClipperError("OpenAI API key is required for transcription.")
+
+    # 1. Audio Extract
+    tmp_dir = tempfile.mkdtemp(prefix="autoclip_audio_")
+    audio_path = os.path.join(tmp_dir, "audio.mp3")
+    
+    cmd = [
+        "ffmpeg", "-y", "-i", video_path, "-vn",
+        "-ac", "1", "-ar", "16000", "-b:a", "32k",
+        "-map_metadata", "-1", audio_path,
+    ]
+    _run(cmd)
+
+    # 2. Whisper API Call
+    client = OpenAI(api_key=api_key)
+    with open(audio_path, "rb") as fh:
+        try:
+            resp = client.audio.transcriptions.create(
+                file=(os.path.basename(audio_path), fh.read()),
+                model="whisper-1",
+                response_format="verbose_json",
+                timestamp_granularities=["word", "segment"],
+            )
+        except Exception as exc:
+            raise ClipperError(f"Whisper API failed: {exc}")
+
+    # 3. Format Output
+    segments = []
+    data = resp.model_dump() if hasattr(resp, "model_dump") else dict(resp)
+    for seg in data.get("segments") or []:
+        segments.append({
+            "start": float(seg.get("start") or 0.0),
+            "end": float(seg.get("end") or 0.0),
+            "text": str(seg.get("text", "")).strip(),
+        })
+    return segments
