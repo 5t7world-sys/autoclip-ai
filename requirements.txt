@@ -1,0 +1,25 @@
+# AutoClip AI — core dependencies
+# Python 3.10+ recommended. FFmpeg must be installed separately (see README).
+
+streamlit>=1.36,<2.0
+yt-dlp>=2024.8.6
+openai>=1.40,<3.0
+mediapipe>=0.10.9
+numpy>=1.24
+pillow>=10.2.0
+python-dotenv>=1.0.1
+
+# ffmpeg-python is part of the documented stack. The app talks to the ffmpeg
+# binary directly (faster, no extra abstraction), so this is optional at runtime.
+ffmpeg-python>=0.2.0
+
+# --- Styled caption rendering (optional) -----------------------------------
+# pycaps-ai drags in playwright, which is a large download. The app tries
+# pycaps first when "Use pycaps-ai templates" is checked and silently falls back
+# to its built-in FFmpeg/libass renderer on any error, so this is safe to skip:
+#
+#   pip install pycaps-ai --no-deps     # lighter: ASS renderer still available
+#   playwright install chromium         # only for pycaps' CSS templates
+#
+# Install it manually if you want the pycaps templates:
+# pycaps-ai>=0.2.2
